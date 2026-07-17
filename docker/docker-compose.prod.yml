@@ -144,6 +144,11 @@ services:
       resources:
         limits:
           memory: 4g
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   # Light worker for exports/notifications — never blocked by transcriptions.
   worker-default:

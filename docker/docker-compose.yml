@@ -145,6 +145,13 @@ services:
       --loglevel=INFO
       --concurrency=2
       --queues=default,ai_pipeline
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     depends_on:
       postgres:
         condition: service_healthy
