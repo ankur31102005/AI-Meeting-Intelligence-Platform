@@ -12,7 +12,6 @@ with Pydantic. A single retry with a stricter instruction covers the
 occasional malformed-JSON response small local models produce.
 """
 
-import json
 from functools import lru_cache
 
 from app.ai.intelligence.base import MeetingIntelligence
@@ -38,41 +37,52 @@ def _client():
     return OpenAI(base_url=settings.OLLAMA_BASE_URL, api_key="ollama")
 
 
-def _schema_instruction() -> str:
-    schema = json.dumps(MeetingIntelligence.model_json_schema())
-    return (
-        "Return ONLY a JSON object (no prose, no markdown fences) that conforms "
-        f"exactly to this JSON schema:\n{schema}"
-    )
+def _extract_json(text: str) -> str:
+    """Pull the JSON object out of a model response.
+
+    Small local models often wrap the JSON in prose or ```json fences, or add
+    a trailing sentence — all of which break strict parsing. We strip fences
+    and, failing that, slice from the first '{' to the last '}'. This recovers
+    the payload the model DID produce instead of failing the whole meeting.
+    """
+    t = text.strip()
+    if t.startswith("```"):
+        # ```json\n{...}\n```  ->  {...}
+        t = t.split("```", 2)[1] if t.count("```") >= 2 else t
+        t = t[4:] if t.lstrip().startswith("json") else t
+        t = t.strip().strip("`").strip()
+    start, end = t.find("{"), t.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return t[start : end + 1]
+    return t
 
 
 class OllamaLLMProvider:
     def generate_intelligence(self, transcript_text: str) -> MeetingIntelligence:
         settings = get_settings()
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT + "\n\n" + _schema_instruction()},
+            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": build_user_prompt(transcript_text)},
         ]
-        content = self._chat(settings.OLLAMA_MODEL, messages, json_mode=True)
-
-        try:
-            return MeetingIntelligence.model_validate_json(content)
-        except Exception:
-            # One stricter retry — small local models occasionally wrap JSON
-            # in prose or fences.
-            logger.warning("ollama_json_retry")
-            messages.append({"role": "assistant", "content": content})
-            messages.append(
-                {"role": "user", "content": "That was not valid JSON. Return ONLY the JSON object."}
-            )
-            content = self._chat(settings.OLLAMA_MODEL, messages, json_mode=True)
+        # Ollama's NATIVE structured output: pass the JSON SCHEMA via
+        # response_format, which CONSTRAINS the model to emit a valid instance
+        # of the schema. (Putting the schema in the prompt made small models
+        # echo the schema back instead of filling it.) A couple of retries
+        # cover the rare invalid response.
+        schema = MeetingIntelligence.model_json_schema()
+        last = ""
+        for attempt in range(3):
+            last = self._chat(settings.OLLAMA_MODEL, messages, schema=schema)
             try:
-                return MeetingIntelligence.model_validate_json(content)
-            except Exception as exc:
-                raise UnprocessableError(
-                    "The local model did not return valid structured output. "
-                    "Try a larger Ollama model (e.g. llama3.1)."
-                ) from exc
+                return MeetingIntelligence.model_validate_json(_extract_json(last))
+            except Exception:
+                logger.warning("ollama_json_retry", attempt=attempt)
+
+        logger.error("ollama_structured_output_failed", sample=last[:300])
+        raise UnprocessableError(
+            "The local model did not return valid structured output. "
+            "Try a larger/stronger Ollama model (e.g. qwen2.5 or llama3.1)."
+        )
 
     def answer_with_context(self, *, question: str, context: str) -> str:
         settings = get_settings()
@@ -80,15 +90,20 @@ class OllamaLLMProvider:
             {"role": "system", "content": RAG_SYSTEM_PROMPT},
             {"role": "user", "content": build_rag_user_prompt(question, context)},
         ]
-        return self._chat(settings.OLLAMA_MODEL, messages, json_mode=False)
+        return self._chat(settings.OLLAMA_MODEL, messages)
 
     # ------------------------------------------------------------------
-    def _chat(self, model: str, messages: list[dict], *, json_mode: bool) -> str:
+    def _chat(self, model: str, messages: list[dict], *, schema: dict | None = None) -> str:
+        """Chat completion. When `schema` is given, use Ollama's structured
+        output (json_schema response_format) to force valid JSON."""
         from openai import OpenAIError
 
-        kwargs = {"model": model, "messages": messages, "temperature": 0.2}
-        if json_mode:
-            kwargs["response_format"] = {"type": "json_object"}
+        kwargs: dict = {"model": model, "messages": messages, "temperature": 0.2}
+        if schema is not None:
+            kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "meeting_intelligence", "schema": schema},
+            }
         try:
             completion = _client().chat.completions.create(**kwargs)
         except OpenAIError as exc:
