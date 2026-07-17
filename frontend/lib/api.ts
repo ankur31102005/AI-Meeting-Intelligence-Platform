@@ -53,7 +53,9 @@ export const tokenStore = {
 
 let refreshPromise: Promise<boolean> | null = null;
 
-async function tryRefresh(): Promise<boolean> {
+// Exported so the XHR-based upload path (lib/upload.ts) can reuse the SAME
+// refresh + coalescing logic instead of duplicating it.
+export async function tryRefresh(): Promise<boolean> {
   const refresh = tokenStore.refresh;
   if (!refresh) return false;
   // Coalesce concurrent refreshes into one network call.
