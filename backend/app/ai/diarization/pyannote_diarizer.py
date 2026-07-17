@@ -26,6 +26,10 @@ def _load_pipeline():
             "HF_TOKEN is required for pyannote diarization."
         )
     logger.info("pyannote_pipeline_loading", pipeline=settings.PYANNOTE_PIPELINE)
+    # pyannote 3.x's from_pretrained takes `use_auth_token` and passes it to
+    # hf_hub_download internally. That arg was removed in huggingface_hub 0.26,
+    # so huggingface_hub is pinned <0.26 in requirements-ai.txt to keep them
+    # compatible.
     pipeline = Pipeline.from_pretrained(
         settings.PYANNOTE_PIPELINE, use_auth_token=settings.HF_TOKEN
     )
