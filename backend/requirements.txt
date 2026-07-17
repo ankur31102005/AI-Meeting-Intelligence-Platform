@@ -43,6 +43,15 @@ boto3>=1.35,<2.0                     # S3 / MinIO client (same API for both)
 faster-whisper>=1.1,<2.0
 openai>=1.60,<2.0                    # OpenAI Whisper API + (later) LLM
 
+# GPU (CUDA) runtime libs for faster-whisper/CTranslate2 4.8 (needs cuDNN 9).
+# Without these the worker with WHISPER_DEVICE=cuda fails: "libcublas.so.12
+# not found". Versions PINNED to CUDA 12.2 to match this host's driver
+# (537.53 -> CUDA 12.2 max); newer cuBLAS would not load on a 12.2 driver.
+# The Dockerfile adds their site-packages dirs to LD_LIBRARY_PATH. Only used
+# on NVIDIA GPU hosts; harmless on CPU-only setups.
+nvidia-cublas-cu12==12.2.5.6
+nvidia-cudnn-cu12==9.1.0.70
+
 # --- AI: speaker diarization (OPTIONAL) ---
 # pyannote.audio pulls torch; only used when HF_TOKEN is configured. Imported
 # lazily so the platform runs fully without it (diarization just skips).
