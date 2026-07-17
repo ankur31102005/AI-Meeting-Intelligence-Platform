@@ -1,0 +1,164 @@
+# =====================================================================
+# Development stack — one command boots the entire platform:
+#
+#   docker compose --env-file .env -f docker/docker-compose.yml up -d
+#   (or simply: make up)
+#
+# Services:
+#   postgres  : primary relational database
+#   redis     : Celery broker + cache
+#   minio     : S3-compatible object storage (same code path as AWS S3)
+#   chromadb  : vector database for RAG
+#   backend   : FastAPI (hot reload via bind mount)
+#   worker    : Celery worker (same image as backend, different command)
+#
+# Production overrides (pinned image digests, no bind mounts, no reload,
+# resource limits) land in docker-compose.prod.yml in Module 12.
+# =====================================================================
+
+name: meeting-platform
+
+services:
+  # -------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: mp-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-meeting_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-meeting_platform}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Extensions bootstrap — runs once on first start (empty volume).
+      - ../database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-meeting_user} -d ${POSTGRES_DB:-meeting_platform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: mp-redis
+    # AOF persistence: queued Celery tasks survive a container restart.
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # -------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest # TODO(prod): pin to a RELEASE.* tag in docker-compose.prod.yml
+    container_name: mp-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minio_dev_password}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console (http://localhost:9001)
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  chromadb:
+    image: chromadb/chroma:latest # TODO(prod): pin exact version in docker-compose.prod.yml
+    container_name: mp-chromadb
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    ports:
+      - "8001:8000"   # host 8001 -> container 8000 (8000 is taken by backend)
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  # -------------------------------------------------------------------
+  backend:
+    build:
+      context: ../backend
+    container_name: mp-backend
+    env_file:
+      - path: ../.env
+        required: false   # falls back to the defaults baked into Settings
+    environment:
+      # Inside the compose network, services are reached by service name —
+      # these override the localhost values used for bare-metal dev.
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      S3_ENDPOINT_URL: http://minio:9000
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind-mount source for hot reload; dependencies stay in the image.
+      - ../backend/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # -------------------------------------------------------------------
+  worker:
+    build:
+      context: ../backend
+    container_name: mp-worker
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      S3_ENDPOINT_URL: http://minio:9000
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+    volumes:
+      - ../backend/app:/app/app
+    # Listens on BOTH queues in dev; production runs dedicated workers
+    # per queue so transcriptions never block exports.
+    command: >
+      celery -A app.workers.celery_app:celery_app worker
+      --loglevel=INFO
+      --concurrency=2
+      --queues=default,ai_pipeline
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.workers.celery_app:celery_app inspect ping -d celery@$$HOSTNAME --timeout 5"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  chroma_data:

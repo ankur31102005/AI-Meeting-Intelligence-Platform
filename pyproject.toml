@@ -1,0 +1,29 @@
+# =====================================================================
+# Root tooling configuration (pytest + ruff).
+# The backend itself is a plain package under backend/app — this file
+# only configures developer tooling that runs from the repository root.
+# =====================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests/backend"]
+# Make `import app.*` work without installing the backend as a package.
+pythonpath = ["backend"]
+addopts = "-q --strict-markers"
+markers = [
+    "integration: requires running infrastructure (Postgres/Redis via Docker)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["backend"]
+
+[tool.ruff.lint]
+# E/F = pycodestyle/pyflakes, I = import sorting, B = common bugs,
+# UP = modern syntax upgrades, S = security (bandit rules)
+select = ["E", "F", "I", "B", "UP", "S"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.per-file-ignores]
+# Asserts are the point of tests; hardcoded test passwords are fine there.
+"tests/**" = ["S101", "S105", "S106"]

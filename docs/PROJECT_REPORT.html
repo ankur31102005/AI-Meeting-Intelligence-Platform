@@ -1,0 +1,774 @@
+<title>AI Meeting Intelligence Platform — Complete Build Report</title>
+<style>
+  :root {
+    --bg: #f7f8fb;
+    --surface: #ffffff;
+    --surface-2: #f0f2f7;
+    --ink: #1a1d29;
+    --ink-soft: #4a4f60;
+    --ink-faint: #767c90;
+    --line: #e2e5ee;
+    --accent: #5b5bd6;
+    --accent-soft: #ececfb;
+    --good: #1f9d63;
+    --good-soft: #e4f5ec;
+    --warn: #b9770a;
+    --warn-soft: #fbf0dc;
+    --bad: #cf4242;
+    --bad-soft: #fbe7e7;
+    --code-bg: #14172130;
+    --term-bg: #1a1d29;
+    --term-ink: #e6e8f0;
+    --radius: 12px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", Menlo, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1016;
+      --surface: #171a22;
+      --surface-2: #1f232d;
+      --ink: #e8eaf2;
+      --ink-soft: #b0b5c5;
+      --ink-faint: #7c8298;
+      --line: #282d38;
+      --accent: #9a9af5;
+      --accent-soft: #23233a;
+      --good: #4cc98a;
+      --good-soft: #16281f;
+      --warn: #e0a640;
+      --warn-soft: #2a2314;
+      --bad: #eb6a6a;
+      --bad-soft: #2a1919;
+      --code-bg: #00000040;
+      --term-bg: #0a0c11;
+      --term-ink: #d6d9e6;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f8fb; --surface: #ffffff; --surface-2: #f0f2f7; --ink: #1a1d29;
+    --ink-soft: #4a4f60; --ink-faint: #767c90; --line: #e2e5ee; --accent: #5b5bd6;
+    --accent-soft: #ececfb; --good: #1f9d63; --good-soft: #e4f5ec; --warn: #b9770a;
+    --warn-soft: #fbf0dc; --bad: #cf4242; --bad-soft: #fbe7e7; --code-bg: #14172130;
+    --term-bg: #1a1d29; --term-ink: #e6e8f0;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1016; --surface: #171a22; --surface-2: #1f232d; --ink: #e8eaf2;
+    --ink-soft: #b0b5c5; --ink-faint: #7c8298; --line: #282d38; --accent: #9a9af5;
+    --accent-soft: #23233a; --good: #4cc98a; --good-soft: #16281f; --warn: #e0a640;
+    --warn-soft: #2a2314; --bad: #eb6a6a; --bad-soft: #2a1919; --code-bg: #00000040;
+    --term-bg: #0a0c11; --term-ink: #d6d9e6;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  header.hero {
+    background: linear-gradient(160deg, var(--accent) 0%, #7c5cd6 100%);
+    color: #fff;
+    padding: 56px 0 48px;
+  }
+  header.hero .wrap { max-width: 940px; }
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: .14em; font-size: .72rem;
+    font-weight: 600; opacity: .85; margin: 0 0 12px;
+  }
+  header.hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.7rem); line-height: 1.1; margin: 0 0 14px;
+    text-wrap: balance; font-weight: 750; letter-spacing: -.02em;
+  }
+  header.hero p { margin: 0; font-size: 1.05rem; max-width: 62ch; opacity: .95; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+  .hero-meta span {
+    background: #ffffff22; border: 1px solid #ffffff33; border-radius: 999px;
+    padding: 5px 14px; font-size: .82rem; font-weight: 500;
+  }
+
+  /* TOC */
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px 24px; margin: 32px 0;
+  }
+  nav.toc h2 { margin: 0 0 12px; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--ink-faint); }
+  nav.toc ol { margin: 0; padding: 0; list-style: none;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  nav.toc a { color: var(--ink-soft); text-decoration: none; font-size: .9rem;
+    display: block; padding: 4px 0; }
+  nav.toc a:hover { color: var(--accent); }
+
+  section { margin: 48px 0; }
+  h2.sec {
+    font-size: 1.5rem; letter-spacing: -.01em; margin: 0 0 6px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--line);
+  }
+  h2.sec .num { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .lead { color: var(--ink-soft); margin: 0 0 24px; }
+  h3 { font-size: 1.12rem; margin: 28px 0 8px; letter-spacing: -.01em; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+
+  /* Cards */
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 22px 24px; margin: 16px 0;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 14px; }
+  .card-sm { background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 18px; }
+  .card-sm h4 { margin: 0 0 4px; font-size: .98rem; }
+  .card-sm p { margin: 0; font-size: .88rem; color: var(--ink-soft); }
+
+  /* Module block */
+  .module { background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); margin: 18px 0; overflow: hidden; }
+  .module-head { display: flex; align-items: center; gap: 14px;
+    padding: 18px 22px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  .module-num { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 1.05rem;
+    display: flex; align-items: center; justify-content: center; letter-spacing: -.02em; }
+  .module-head h3 { margin: 0; font-size: 1.1rem; }
+  .module-head .tag { font-size: .78rem; color: var(--ink-faint); }
+  .module-body { padding: 20px 22px; }
+  .module-body .row { margin-bottom: 14px; }
+  .module-body .row:last-child { margin-bottom: 0; }
+  .label { display: inline-block; font-size: .7rem; text-transform: uppercase;
+    letter-spacing: .09em; font-weight: 700; margin-bottom: 4px; }
+  .label.kya { color: var(--accent); }
+  .label.concept { color: var(--good); }
+  .label.prob { color: var(--bad); }
+
+  /* Callouts */
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 14px 0;
+    border: 1px solid; font-size: .92rem; }
+  .callout.good { background: var(--good-soft); border-color: var(--good); }
+  .callout.warn { background: var(--warn-soft); border-color: var(--warn); }
+  .callout.bad { background: var(--bad-soft); border-color: var(--bad); }
+  .callout strong { display: block; margin-bottom: 3px; }
+
+  /* Terminal / code */
+  pre.term {
+    background: var(--term-bg); color: var(--term-ink); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; font-family: var(--mono);
+    font-size: .84rem; line-height: 1.7; margin: 12px 0;
+  }
+  pre.term .c { color: #7c8298; }
+  pre.term .g { color: #4cc98a; }
+  code { font-family: var(--mono); font-size: .86em; background: var(--code-bg);
+    padding: 1px 6px; border-radius: 5px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: .9rem; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); }
+  tr:last-child td { border-bottom: none; }
+
+  /* Q&A */
+  details.qa { background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; margin: 10px 0; overflow: hidden; }
+  details.qa summary { cursor: pointer; padding: 14px 18px; font-weight: 600;
+    list-style: none; display: flex; gap: 10px; align-items: baseline; }
+  details.qa summary::-webkit-details-marker { display: none; }
+  details.qa summary::before { content: "Q"; color: var(--accent); font-weight: 800;
+    font-family: var(--mono); flex-shrink: 0; }
+  details.qa[open] summary { border-bottom: 1px solid var(--line); }
+  details.qa .ans { padding: 14px 18px 16px; color: var(--ink-soft); font-size: .93rem; }
+  details.qa .ans::before { content: "A  "; color: var(--good); font-weight: 800;
+    font-family: var(--mono); }
+
+  ul.tight { margin: 8px 0; padding-left: 20px; }
+  ul.tight li { margin: 4px 0; }
+  .pill { display: inline-block; font-size: .72rem; font-weight: 600; padding: 2px 9px;
+    border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+
+  footer { text-align: center; color: var(--ink-faint); font-size: .85rem;
+    padding: 40px 0; border-top: 1px solid var(--line); margin-top: 48px; }
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Complete Build Report · Interview Prep</p>
+    <h1>AI Meeting Intelligence Platform</h1>
+    <p>Ek production-grade AI SaaS — audio upload karo, transcript bano, speakers pehchano,
+      summary + action items nikaalo, aur meetings se chat karo. Ye report bataati hai humne
+      12 modules mein kya banaya, kaunse problems aaye, kaise solve kiye, aur interview mein
+      kya poocha ja sakta hai.</p>
+    <div class="hero-meta">
+      <span>12 Modules</span>
+      <span>183 Backend Tests</span>
+      <span>FastAPI + Next.js</span>
+      <span>Fully Dockerized</span>
+      <span>100% Free AI (local)</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="toc">
+    <h2>Is report mein</h2>
+    <ol>
+      <li><a href="#overview">1. Project kya hai</a></li>
+      <li><a href="#stack">2. Tech stack (kya, kyun)</a></li>
+      <li><a href="#flow">3. Ek meeting ka safar</a></li>
+      <li><a href="#modules">4. 12 Modules detail mein</a></li>
+      <li><a href="#problems">5. Saare problems + fixes</a></li>
+      <li><a href="#run">6. Kaise chalayein (commands)</a></li>
+      <li><a href="#audio">7. Audio file kahan se laayein</a></li>
+      <li><a href="#interview">8. Interview Q&amp;A (30+)</a></li>
+      <li><a href="#glossary">9. Concepts glossary</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1. OVERVIEW -->
+  <section id="overview">
+    <h2 class="sec"><span class="num">01</span> &nbsp;Project kya hai</h2>
+    <p class="lead">Ek web application jahan aap meeting ki audio/video upload karte ho aur AI
+      automatically usse samajh ke useful cheezein nikaalta hai.</p>
+    <div class="card-grid">
+      <div class="card-sm"><h4>🎙️ Transcription</h4><p>Audio → text, timestamps ke saath</p></div>
+      <div class="card-sm"><h4>🗣️ Speaker Diarization</h4><p>"Kaun bola" — Speaker 1, 2, 3…</p></div>
+      <div class="card-sm"><h4>🧠 Intelligence</h4><p>Summary, decisions, risks, action items</p></div>
+      <div class="card-sm"><h4>🔍 Semantic Search</h4><p>Meaning se search, keyword se nahi</p></div>
+      <div class="card-sm"><h4>💬 RAG Chat</h4><p>Meeting se sawaal poocho, citations ke saath</p></div>
+      <div class="card-sm"><h4>👥 Multi-tenant</h4><p>Har organization ka data alag &amp; secure</p></div>
+    </div>
+    <div class="callout good">
+      <strong>Core challenge jisne poori design decide ki:</strong>
+      1 ghante ki meeting process karne mein 5–10 minute lagte hain, lekin ek HTTP request
+      sirf ~30 second zinda rehti hai. Isliye humne <strong>background workers (Celery)</strong>
+      use kiye — API turant "le liya" bolta hai, worker aaram se process karta hai, frontend
+      status poll karta hai.
+    </div>
+  </section>
+
+  <!-- 2. STACK -->
+  <section id="stack">
+    <h2 class="sec"><span class="num">02</span> &nbsp;Tech Stack — kya aur kyun</h2>
+    <p class="lead">Har tool ek specific problem solve karta hai. Interview mein "ye kyun choose kiya"
+      poocha jaata hai — ye table yaad rakho.</p>
+    <table>
+      <tr><th>Tool</th><th>Kya karta hai</th><th>Kyun choose kiya</th></tr>
+      <tr><td><strong>FastAPI</strong></td><td>Backend API framework</td><td>Fastest Python framework, auto Swagger docs, type-safe validation</td></tr>
+      <tr><td><strong>PostgreSQL</strong></td><td>Main database</td><td>Solid relational DB, JSONB, full-text search, free</td></tr>
+      <tr><td><strong>SQLAlchemy</strong></td><td>ORM (Python ↔ SQL)</td><td>Raw SQL se bachao, SQL injection safe, migrations (Alembic)</td></tr>
+      <tr><td><strong>Redis</strong></td><td>Cache + task queue</td><td>Super-fast; Celery ka message broker</td></tr>
+      <tr><td><strong>Celery</strong></td><td>Background workers</td><td>Long AI tasks HTTP request ke bahar chalane ke liye</td></tr>
+      <tr><td><strong>MinIO / S3</strong></td><td>File storage</td><td>Audio files DB mein nahi — object storage mein. Dev=MinIO, prod=S3, same code</td></tr>
+      <tr><td><strong>ChromaDB</strong></td><td>Vector database</td><td>Embeddings store + semantic search (RAG ke liye)</td></tr>
+      <tr><td><strong>Whisper</strong></td><td>Speech → text</td><td>Best open-source transcription, local + free</td></tr>
+      <tr><td><strong>Pyannote</strong></td><td>Speaker diarization</td><td>"Kaun bola" — best open-source option</td></tr>
+      <tr><td><strong>Ollama / OpenAI</strong></td><td>LLM (summary, chat)</td><td>Ollama = free local; OpenAI = best quality (paid)</td></tr>
+      <tr><td><strong>Next.js</strong></td><td>Frontend</td><td>React ka production framework — routing, SSR built-in</td></tr>
+      <tr><td><strong>Docker</strong></td><td>Containerization</td><td>"Mere laptop pe chalta tha" problem ka ilaaj</td></tr>
+    </table>
+  </section>
+
+  <!-- 3. FLOW -->
+  <section id="flow">
+    <h2 class="sec"><span class="num">03</span> &nbsp;Ek Meeting ka Safar (End-to-End)</h2>
+    <p class="lead">Jab aap ek audio upload karte ho, ye 5 stages background mein chalti hain:</p>
+    <pre class="term">
+<span class="c"># User audio upload karta hai</span>
+   API turant meeting banata hai (status=uploaded) <span class="g">→ 202 "le liya"</span>
+   Celery ko task bhejta hai (Redis queue mein)
+
+<span class="c"># Worker background mein utha ke process karta hai:</span>
+   1. EXTRACTING   <span class="g">→</span> FFmpeg: video/audio → 16kHz mono WAV
+   2. TRANSCRIBING <span class="g">→</span> Whisper: audio → text + timestamps
+   3. DIARIZING    <span class="g">→</span> Pyannote: "kaun bola" (optional)
+   4. ANALYZING    <span class="g">→</span> LLM: summary, decisions, action items
+   5. EMBEDDING    <span class="g">→</span> chunks → vectors → ChromaDB (search/chat ke liye)
+   <span class="g">→ COMPLETED</span>
+
+<span class="c"># Frontend har 3 second status poll karta hai → progress bar live</span></pre>
+    <div class="callout good">
+      <strong>Clean Architecture (har request ka rasta):</strong>
+      <code>Endpoint (HTTP)</code> → <code>Service (business logic + transaction)</code> →
+      <code>Repository (sirf SQL)</code> → <code>Database</code>. Har layer sirf apna kaam
+      jaanti hai — isse code testable, maintainable, aur swappable rehta hai.
+    </div>
+  </section>
+
+  <!-- 4. MODULES -->
+  <section id="modules">
+    <h2 class="sec"><span class="num">04</span> &nbsp;12 Modules — Detail mein</h2>
+    <p class="lead">Humne project ko 12 modules mein banaya — foundation pehle, features baad mein.
+      Har module ke saath: kya banaya, kaunsa concept seekha, aur kya problem aayi.</p>
+
+    <!-- M1 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M1</div>
+        <div><h3>Scaffold + Docker + Config</h3><div class="tag">Foundation</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>FastAPI app factory, config
+          (env variables), structured logging, error handling, health endpoints, Docker Compose
+          (6 services: Postgres, Redis, MinIO, ChromaDB, backend, worker).</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>12-Factor config</strong>
+          (settings env se, code se alag), <strong>fail-fast</strong> (production mein default password
+          ho to app boot hi nahi hogi), <strong>liveness vs readiness</strong> health probes.</div>
+        <div class="row"><span class="label prob">Problem</span><br>DB unreachable ho to health-check
+          20+ second hang karta tha. Fix: <code>connect_timeout=5</code> add kiya — fail fast.</div>
+      </div>
+    </div>
+
+    <!-- M2 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M2</div>
+        <div><h3>Database Models + Migrations</h3><div class="tag">Data layer</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>16 SQLAlchemy tables (users,
+          meetings, transcripts, speakers, insights, action items, chat…), mixins (UUID PK, timestamps,
+          soft-delete), Alembic migrations.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Composition over inheritance</strong>
+          (mixins), <strong>soft delete</strong> (data flag karo, delete mat karo), <strong>cascade
+          strategy</strong> (speaker delete ho to transcript bache — <code>SET NULL</code>).</div>
+        <div class="row"><span class="label prob">Problem (classic!):</span><br>Alembic ka auto-generated
+          <code>downgrade()</code> tables to drop karta tha par PostgreSQL <strong>ENUM types nahi</strong>.
+          Downgrade ke baad re-upgrade fail: <em>"type user_role already exists"</em>. Fix: manually 8 enum
+          drops add kiye. Isliye migrations hamesha review karo!</div>
+      </div>
+    </div>
+
+    <!-- M3 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M3</div>
+        <div><h3>Authentication (JWT + RBAC)</h3><div class="tag">Security</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Signup, login, logout, forgot/reset
+          password. JWT access token + refresh token <strong>rotation</strong> + reuse detection. Role-based
+          access (Admin/Manager/Employee). Rate limiting.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>3 token strategies</strong>:
+          password→bcrypt (slow by design), access→JWT (stateless), refresh→SHA-256 hash (revocable).
+          <strong>Refresh rotation</strong>: har use pe naya token, chori detect ho jaati hai.
+          <strong>Anti-enumeration</strong>: "wrong password" aur "no user" ka same error.</div>
+        <div class="row"><span class="label prob">Problem</span><br>Rate limiter (slowapi) ne har success
+          response pe crash kiya — usse <code>response</code> parameter chahiye tha. Sirf jab rate limiting
+          ON (production) tab dikha, tests mein nahi. Fix: har endpoint mein <code>response: Response</code>.</div>
+      </div>
+    </div>
+
+    <!-- M4 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M4</div>
+        <div><h3>File Upload + Storage</h3><div class="tag">Provider Pattern</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Drag-drop upload, storage abstraction
+          (LocalStorage ↔ S3/MinIO, same interface), file validation (magic bytes), streaming size cap,
+          meeting CRUD, presigned download URLs.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Provider Pattern</strong>
+          (ek interface, kai backends — env se switch), <strong>magic-byte validation</strong> (extension pe
+          bharosa nahi — file ka actual header check), <strong>compensating transaction</strong> (DB fail ho
+          to stored file delete).</div>
+        <div class="row"><span class="label prob">Problem (star bug):</span><br>Size-limit wrapper sirf
+          <code>read()</code> deta tha. LocalStorage test pass hua, par <strong>real MinIO</strong> pe boto3
+          ne <code>.close()</code> call kiya → crash. <strong>Seekh: real infra pe test karo, mock kaafi
+          nahi.</strong></div>
+      </div>
+    </div>
+
+    <!-- M5 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M5</div>
+        <div><h3>Audio Pipeline (Whisper)</h3><div class="tag">AI starts</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>FFmpeg audio extraction,
+          transcription providers (local Whisper / OpenAI / stub), Celery pipeline task, status state
+          machine, idempotent reprocess.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Strategy Pattern</strong>
+          (3 transcribers, ek interface), <strong>thin task / fat service</strong> (Celery task patla,
+          logic service mein — bina broker ke testable), <strong>state machine</strong> (illegal status
+          jumps rukein), <strong>idempotency</strong> (retry pe duplicate na ho).</div>
+        <div class="row"><span class="label concept">Smart trick</span><br><strong>Stub provider</strong>
+          banaya — poori pipeline bina 150MB model download ke test hoti hai. CI mein invaluable.</div>
+      </div>
+    </div>
+
+    <!-- M6 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M6</div>
+        <div><h3>Speaker Diarization</h3><div class="tag">Graceful degradation</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Pyannote diarization (optional),
+          overlap-matching (transcript segments ko speakers se link karna), speaker rename.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Graceful degradation</strong>
+          (HF token nahi → skip, transcript phir bhi milega), <strong>overlap matching</strong> (Whisper aur
+          Pyannote alag segment karte hain — max time-overlap se speaker assign), <strong>best-effort stage</strong>
+          (diarization fail ho to bhi meeting complete).</div>
+        <div class="row"><span class="label prob">Problem</span><br>Stub diarizer bhi ffprobe call karta tha
+          (host pe ffmpeg nahi) — test mein wo patch karna bhool gaya. Fix: test fixture mein pin kiya.</div>
+      </div>
+    </div>
+
+    <!-- M7 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M7</div>
+        <div><h3>Meeting Intelligence (LLM)</h3><div class="tag">Structured AI</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>LLM se summary, executive summary,
+          decisions, risks, action items, deadlines. Structured JSON output, OpenAI + stub providers.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Structured outputs</strong>
+          (LLM ko Pydantic schema force karo — fragile text parsing nahi), <strong>core vs best-effort</strong>
+          (analysis fail = pipeline fail, kyunki summary core feature hai), <strong>prompt engineering</strong>
+          (low temperature, "only from transcript").</div>
+      </div>
+    </div>
+
+    <!-- M8 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M8</div>
+        <div><h3>RAG (Search + Chat)</h3><div class="tag">ChromaDB</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Embedding providers, vector store
+          (ChromaDB ↔ in-memory), chunking, semantic search, RAG chat with citations.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>RAG</strong> = Retrieve
+          relevant chunks → LLM ko context do → grounded answer. <strong>Dual write</strong> (vectors→Chroma,
+          twin rows→Postgres — citations + cleanup). <strong>Tenant isolation</strong> (har query org-scoped).
+          <strong>Citations</strong> (answer ke saath source + timestamp = verifiable AI).</div>
+        <div class="row"><span class="label prob">Problem</span><br>Multi-key metadata filter ko ChromaDB
+          <code>$and</code> syntax chahiye, in-memory store flat dict. Fix: translate helper.</div>
+      </div>
+    </div>
+
+    <!-- M9 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M9</div>
+        <div><h3>Frontend Foundation</h3><div class="tag">Next.js</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Next.js 15 + TypeScript + Tailwind,
+          UI components (ShadCN-style), typed API client with auto token-refresh, auth pages, app shell
+          (sidebar+topbar), dashboard, dark mode.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Token refresh coalescing</strong>
+          (concurrent 401s ek hi refresh share karein — backend reuse-detection se bachne ke liye),
+          <strong>full-stack type safety</strong> (backend schema ↔ TS types), <strong>route groups</strong>.</div>
+      </div>
+    </div>
+
+    <!-- M10 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M10</div>
+        <div><h3>Upload UI + Meeting Detail</h3><div class="tag">Live polling</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Drag-drop upload (XHR progress bar),
+          meeting detail with tabs (Overview/Transcript/Speakers/Intelligence), <strong>live status polling</strong>,
+          speaker rename, action-item toggle.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Live polling</strong> (pipeline
+          chalte waqt har 3s refresh, terminal state pe stop), <strong>XHR upload progress</strong> (fetch nahi
+          de sakta), <strong>optimistic UI</strong> (turant update, fail pe revert).</div>
+        <div class="row"><span class="label prob">Problem</span><br><code>npm run build</code> chalaya jab
+          <code>npm run dev</code> chal raha tha → dono <code>.next</code> share karte hain → corrupt → 500.
+          Fix: node kill, <code>rm -rf .next</code>, restart. <strong>Kabhi dono ek saath mat chalao.</strong></div>
+      </div>
+    </div>
+
+    <!-- M11 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M11</div>
+        <div><h3>Chat UI + Search</h3><div class="tag">RAG frontend</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Semantic search page (results + link +
+          timestamp + match%), ChatGPT-style RAG chat (session sidebar + message thread + citations).</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>RAG chat UI</strong> (citations =
+          trust layer), <strong>optimistic chat</strong> (user turn turant), <strong>auto-scroll to bottom</strong>.
+          Aur beech mein <strong>Ollama provider</strong> add kiya — free local LLM.</div>
+      </div>
+    </div>
+
+    <!-- M12 -->
+    <div class="module">
+      <div class="module-head">
+        <div class="module-num">M12</div>
+        <div><h3>Dockerize + Deploy + CI/CD</h3><div class="tag">Production</div></div>
+      </div>
+      <div class="module-body">
+        <div class="row"><span class="label kya">Kya banaya</span><br>Frontend multi-stage Dockerfile (313MB
+          standalone image), production compose (all services, restart policies, resource limits, split
+          workers), GitHub Actions CI, deployment docs.</div>
+        <div class="row"><span class="label concept">Concept</span><br><strong>Multi-stage build</strong>
+          (image chhoti), <strong>NEXT_PUBLIC = build-time</strong> (browser var bundle mein bake),
+          <strong>dev vs prod compose</strong>, <strong>non-root container</strong>, <strong>queue isolation</strong>
+          (heavy transcription vs light exports alag workers).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. PROBLEMS -->
+  <section id="problems">
+    <h2 class="sec"><span class="num">05</span> &nbsp;Saare Problems + Fixes (ek jagah)</h2>
+    <p class="lead">Ye bugs hum <em>live</em> test karte waqt pakde — interview mein "debugging experience"
+      ke liye gold hain. "Ek bug batao jo aapne solve kiya" ka jawab yahan hai.</p>
+    <table>
+      <tr><th>Kahan</th><th>Problem</th><th>Fix / Seekh</th></tr>
+      <tr><td>M2</td><td>Alembic downgrade ENUM types drop nahi karta → re-upgrade fail</td><td>Manual enum drops; migrations review karo</td></tr>
+      <tr><td>M3</td><td>Rate limiter success response pe crash (response param missing)</td><td>Endpoints mein <code>response: Response</code>; prod-only bug tests mein nahi dikha</td></tr>
+      <tr><td>M3</td><td>Postgres (aware) vs SQLite (naive) datetime compare crash</td><td><code>_as_utc()</code> helper — naive ko UTC maan lo</td></tr>
+      <tr><td>M4</td><td>Same-timestamp meetings pe pagination unstable (item 2 pages pe)</td><td>Stable tiebreaker: <code>ORDER BY created_at, id</code></td></tr>
+      <tr><td>M4</td><td>Size wrapper boto3 ke saath crash (sirf read() tha)</td><td><code>__getattr__</code> delegate; real MinIO pe test karo</td></tr>
+      <tr><td>M10</td><td><code>build</code> + <code>dev</code> ne <code>.next</code> corrupt kiya → 500</td><td>node kill + <code>rm -rf .next</code>; kabhi ek saath mat chalao</td></tr>
+      <tr><td>Frontend</td><td>CORS block — frontend 3001 pe, backend sirf 3000 allow</td><td>Purane node kill; CORS mein 3001 add</td></tr>
+      <tr><td>OpenAI</td><td>API key valid par account mein credits nahi (insufficient_quota)</td><td>Ollama (free local LLM) implement kiya</td></tr>
+      <tr><td>Real test</td><td>Whisper ne "Ankur" ko "Uncle" suna</td><td>Bug nahi — real ASR behavior (proof ki AI genuine hai!)</td></tr>
+    </table>
+  </section>
+
+  <!-- 6. RUN -->
+  <section id="run">
+    <h2 class="sec"><span class="num">06</span> &nbsp;Website Kaise Chalayein</h2>
+    <p class="lead">Do cheezein chahiye: backend (Docker) + frontend (Next.js). Docker Desktop pehle chalu karo (🐳 icon green).</p>
+
+    <h3>Sabse aasaan — ek command (Windows)</h3>
+    <pre class="term"><span class="c"># Project folder mein jaao, phir:</span>
+cd "C:\Users\ankur\OneDrive\Desktop\AI Meeting Intelligence Platform"
+.\start.ps1        <span class="c"># backend + frontend dono chalu</span>
+
+<span class="c"># Band karne ke liye:</span>
+.\stop.ps1</pre>
+
+    <h3>Ya manually — 2 terminals</h3>
+    <pre class="term"><span class="c"># Terminal 1 — Backend (Docker)</span>
+cd "C:\Users\ankur\OneDrive\Desktop\AI Meeting Intelligence Platform"
+docker compose --env-file .env -f docker/docker-compose.yml up -d
+
+<span class="c"># Terminal 2 — Frontend</span>
+cd frontend
+npm run dev</pre>
+
+    <p>Phir browser mein kholo: <strong>http://localhost:3000</strong></p>
+
+    <div class="callout warn">
+      <strong>2 zaroori baatein:</strong>
+      <ul class="tight" style="margin-bottom:0">
+        <li>Ek hi <code>npm run dev</code> chalao. "Port 3000 in use" dikhe to purana band karo:
+          <code>taskkill /F /IM node.exe</code></li>
+        <li><code>npm run build</code> aur <code>npm run dev</code> kabhi ek saath mat chalao (<code>.next</code> corrupt hota hai).</li>
+      </ul>
+    </div>
+
+    <h3>Backend logs dekhna / status check</h3>
+    <pre class="term">docker compose --env-file .env -f docker/docker-compose.yml ps       <span class="c"># sab healthy?</span>
+docker compose --env-file .env -f docker/docker-compose.yml logs -f worker   <span class="c"># pipeline live</span></pre>
+
+    <div class="callout good">
+      <strong>Abhi ka setup (sab FREE, no API key):</strong> Transcription = Whisper (local),
+      Summary/Chat = Ollama llama3.2 (local), Embeddings = sentence-transformers (local).
+      Ollama chalu hona chahiye (system tray mein 🦙). Speakers off (HF token nahi).
+    </div>
+  </section>
+
+  <!-- 7. AUDIO -->
+  <section id="audio">
+    <h2 class="sec"><span class="num">07</span> &nbsp;Audio File Kahan Se Laayein</h2>
+    <p class="lead">Test karne ke liye MP3 / WAV / MP4 chahiye jisme <strong>actual baat-cheet</strong> ho
+      (Whisper usse transcribe karega). Ye options hain:</p>
+
+    <div class="card-grid">
+      <div class="card-sm"><h4>1. Khud record karo</h4><p>Windows "Voice Recorder" app, ya phone ka
+        recorder. 1-2 min meeting-jaisi baat bol ke save karo. <span class="pill">easiest + real</span></p></div>
+      <div class="card-sm"><h4>2. Windows TTS se banao</h4><p>Text-to-speech se audio (jaise humne test
+        kiya). Neeche command hai. <span class="pill">no mic needed</span></p></div>
+      <div class="card-sm"><h4>3. Zoom / Meet / Teams</h4><p>Kisi purani meeting ki recording
+        (MP4). Real content.</p></div>
+      <div class="card-sm"><h4>4. Free sample sites</h4><p>file-examples.com, sample-videos.com se
+        sample MP3/MP4 download karo.</p></div>
+      <div class="card-sm"><h4>5. Podcast / YouTube clip</h4><p>Chhota clip download karo (sirf
+        personal testing ke liye, copyright respect karo).</p></div>
+      <div class="card-sm"><h4>6. LibriVox</h4><p>librivox.org — free public-domain audiobook
+        recordings (real speech).</p></div>
+    </div>
+
+    <h3>Windows TTS se test audio banane ka command (PowerShell)</h3>
+    <pre class="term"><span class="c"># Ye ek "meeting" bol ke real_meeting.wav banayega — seedha upload kar sakte ho</span>
+$script = "Hello team, let us plan the release. I think we ship on Friday.
+Ankur will finish the backend by Thursday and prepare the release notes.
+The main risk is the tight timeline."
+Add-Type -AssemblyName System.Speech
+$s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+$s.SetOutputToWaveFile("$HOME\Desktop\real_meeting.wav")
+$s.Speak($script); $s.Dispose()</pre>
+    <p>Phir Desktop pe <code>real_meeting.wav</code> milega → website pe <strong>Upload</strong> page pe drag karo!</p>
+
+    <div class="callout good">
+      <strong>Tip:</strong> Achhi transcription ke liye clear speech + kam background noise wali audio
+      use karo. Pehli upload slow hogi (Whisper model download ~150MB), phir fast.
+    </div>
+  </section>
+
+  <!-- 8. INTERVIEW -->
+  <section id="interview">
+    <h2 class="sec"><span class="num">08</span> &nbsp;Interview Q&amp;A (30+)</h2>
+    <p class="lead">Click karke answer kholo. Ye project ke har part se hain — architecture, AI, security,
+      DevOps, frontend.</p>
+
+    <h3>🏗️ Architecture &amp; Design</h3>
+    <details class="qa"><summary>Long-running AI task ko HTTP request mein kyun nahi chalate?</summary>
+      <div class="ans">HTTP request ~30s mein timeout hoti hai, transcription minutes leti hai. Isliye task
+        ko queue (Redis) mein daalte hain, Celery worker process karta hai, client status poll karta hai.
+        API turant 202 lauta deta hai.</div></details>
+    <details class="qa"><summary>Clean Architecture layers kya hain aur faayda?</summary>
+      <div class="ans">Endpoint (HTTP) → Service (business logic + transaction) → Repository (SQL) → DB.
+        Har layer sirf apna kaam jaanti hai. Faayda: testable (service ko bina HTTP test karo), swappable
+        (DB badlo, sirf repository change), maintainable.</div></details>
+    <details class="qa"><summary>Repository pattern kyun? Service ne commit kyun kiya, repository ne nahi?</summary>
+      <div class="ans">Ek business operation (signup = org + user + audit) ek transaction hona chahiye — wo
+        boundary service ke paas hai. Repository sirf queries deta hai, reusable rehta hai. Isse "ek operation
+        = ek commit" enforce hota hai.</div></details>
+    <details class="qa"><summary>Provider / Strategy pattern kya hai, kahan use kiya?</summary>
+      <div class="ans">Ek interface, kai implementations, env se switch. Storage (Local↔S3), transcription
+        (Whisper↔OpenAI↔stub), LLM (Ollama↔OpenAI↔stub), vector store (Chroma↔memory). Faayda: vendor
+        lock-in nahi, testing ke liye stub, config se change.</div></details>
+    <details class="qa"><summary>Idempotency kya hai, pipeline mein kyun zaroori?</summary>
+      <div class="ans">Same operation dobara chale to same result, duplicate nahi. Celery task 3 baar retry
+        ho sakta hai; humne segments/speakers delete-then-insert kiye taaki reprocess pe duplicate na ho.</div></details>
+
+    <h3>🔐 Security &amp; Auth</h3>
+    <details class="qa"><summary>JWT stateless hai to logout kaise karte ho?</summary>
+      <div class="ans">Access token revoke nahi kar sakte (isliye short-lived, 30 min). Refresh token
+        server-side stored hai — usse revoke karte hain. Instant revocation chahiye to JWT denylist (Redis).</div></details>
+    <details class="qa"><summary>Refresh token rotation ka faayda?</summary>
+      <div class="ans">Har refresh pe purana token burn, naya issue. Agar chori hua token dobara use ho
+        (reuse detection), to hum us user ke saare sessions revoke kar dete hain. Chori automatically pakdi
+        jaati hai.</div></details>
+    <details class="qa"><summary>Password bcrypt se, refresh token SHA-256 se — dono alag kyun?</summary>
+      <div class="ans">Password low-entropy (guessable) hai — bcrypt slow-by-design brute-force rokta hai.
+        Refresh token 384-bit random hai (brute-force impossible), aur exact-match lookup chahiye — SHA-256
+        fast + deterministic. bcrypt ka random salt exact lookup todh deta.</div></details>
+    <details class="qa"><summary>RBAC mein 401 vs 403 ka difference?</summary>
+      <div class="ans">401 = "kaun ho?" (login missing/invalid). 403 = "pata hai kaun ho, par allowed nahi"
+        (role kam hai).</div></details>
+    <details class="qa"><summary>Anti-enumeration kya hai?</summary>
+      <div class="ans">Attacker ko ye pata na chale ki kaunsi email registered hai. Login mein "wrong password"
+        aur "no user" ka same error; forgot-password hamesha "link sent" bolta hai.</div></details>
+    <details class="qa"><summary>File upload securely kaise validate karte ho?</summary>
+      <div class="ans">Extension pe kabhi bharosa nahi (attacker-controlled). Magic bytes (file header) check
+        karo — <code>.mp3</code> naam wali <code>.exe</code> header pe pakdi jaati hai. Plus streaming size cap.</div></details>
+
+    <h3>🤖 AI / ML Pipeline</h3>
+    <details class="qa"><summary>RAG kya hai aur kyun use karte ho?</summary>
+      <div class="ans">Retrieval-Augmented Generation. Poora corpus LLM ko nahi dete — question embed karke
+        relevant chunks retrieve karte hain, phir wo context LLM ko dete hain. Faayda: sasta (kam tokens),
+        current (naya data bina retrain), grounded (hallucination kam).</div></details>
+    <details class="qa"><summary>Vector DB aur relational DB dono kyun?</summary>
+      <div class="ans">Vector DB (Chroma): similarity math. Relational (Postgres): truth + citations +
+        cleanup. Twin rows orphan vectors rokte hain — meeting delete ho to Chroma bhi clean ho.</div></details>
+    <details class="qa"><summary>Whisper aur Pyannote alag segment karte hain — align kaise?</summary>
+      <div class="ans">Time-overlap matching. Har transcript segment ke liye us speaker ko assign karo jiske
+        turns us time-range se sabse zyada overlap karte hain. Ties deterministic tiebreak se.</div></details>
+    <details class="qa"><summary>LLM se reliable structured data kaise nikaalte ho?</summary>
+      <div class="ans">Structured outputs / JSON mode — model ko Pydantic schema force karo. Text parsing
+        (regex) fragile hai. Ollama mein humne JSON mode + schema-in-prompt + retry use kiya.</div></details>
+    <details class="qa"><summary>Hallucination kaise kam karte ho?</summary>
+      <div class="ans">Low temperature (0.2), strict system prompt ("only from transcript"), structured
+        constraints, aur RAG grounding (context ke bahar answer mat do). Citations se verifiability.</div></details>
+    <details class="qa"><summary>Optional AI feature (diarization) down ho jaye to?</summary>
+      <div class="ans">Graceful degradation: null provider (ek code path) + best-effort stage (failure
+        non-fatal). Core value (transcript + summary) kabhi block nahi hota.</div></details>
+    <details class="qa"><summary>Core feature (LLM analysis) fail ho to?</summary>
+      <div class="ans">Pipeline fail hota hai (retry + FAILED with reason), kyunki summary core value hai.
+        Par transcript pehle commit ho chuka — FAILED meeting bhi readable rehti hai.</div></details>
+    <details class="qa"><summary>Bahut lambi meeting (3 ghante) kaise handle karoge?</summary>
+      <div class="ans">Chunk + map-reduce: har chunk summarize, phir combine. Ya bade context-window model.
+        Abhi humne explicit truncation with marker use kiya (silent nahi).</div></details>
+
+    <h3>⚙️ Celery / Infra</h3>
+    <details class="qa"><summary>Worker transcription ke beech crash ho jaye to?</summary>
+      <div class="ans"><code>acks_late=True</code>: task tab acknowledge hota hai jab poora ho. Worker mare
+        to task queue mein wapas, dusra worker uthata hai. Idempotent design se safe.</div></details>
+    <details class="qa"><summary>Do queues (ai_pipeline, default) kyun?</summary>
+      <div class="ans">1hr transcription ke peechhe 2s export stuck na ho. Heavy tasks alag queue,
+        light alag — dono independently scale, transcription workers GPU pe.</div></details>
+    <details class="qa"><summary>Liveness vs readiness probe?</summary>
+      <div class="ans">Liveness = "process up hai?" (fail → restart). Readiness = "traffic le sakta hai?"
+        (dependencies check; fail → routing band, restart nahi).</div></details>
+
+    <h3>🐳 Docker / DevOps</h3>
+    <details class="qa"><summary>Docker image chhoti kaise karte ho?</summary>
+      <div class="ans">Multi-stage build (build tools final image mein nahi), Next.js standalone output
+        (sirf used modules), alpine base, non-root user. Hamara frontend 313MB.</div></details>
+    <details class="qa"><summary>NEXT_PUBLIC var build-time kyun bake hoti hai?</summary>
+      <div class="ans">Browser mein chalti hai, isliye bundle mein inline hoti hai build ke waqt. Production
+        mein build arg se real API URL pass karte hain.</div></details>
+    <details class="qa"><summary>Dev aur prod compose alag kyun?</summary>
+      <div class="ans">Dev: hot reload, bind mounts, debugging. Prod: immutable images, restart policies,
+        resource limits, infra ports hidden (security), multiple workers.</div></details>
+    <details class="qa"><summary>Container non-root kyun chalate ho?</summary>
+      <div class="ans">Defense in depth — container compromise ho to root access nahi milta, blast radius
+        kam.</div></details>
+
+    <h3>💻 Frontend</h3>
+    <details class="qa"><summary>JWT frontend mein kahan store karte ho, trade-off?</summary>
+      <div class="ans">localStorage (reload survive) + in-memory mirror. Trade-off: XSS risk vs httpOnly
+        cookie (CSRF risk). Short access TTL + refresh rotation se mitigate.</div></details>
+    <details class="qa"><summary>Long task ka status frontend pe kaise dikhate ho?</summary>
+      <div class="ans">Polling (simple): interval pe status fetch, terminal state pe stop, cleanup on unmount.
+        Scale pe WebSocket/SSE (server push) better.</div></details>
+    <details class="qa"><summary>Upload progress kaise dikhate ho?</summary>
+      <div class="ans">XMLHttpRequest ka <code>upload.onprogress</code> (fetch support nahi karta). Real %
+        milta hai.</div></details>
+    <details class="qa"><summary>Optimistic UI kya hai?</summary>
+      <div class="ans">Server confirm se pehle UI update (snappy feel), fail pe revert. Chat message aur
+        action-item toggle mein use kiya.</div></details>
+  </section>
+
+  <!-- 9. GLOSSARY -->
+  <section id="glossary">
+    <h2 class="sec"><span class="num">09</span> &nbsp;Concepts Glossary (quick revise)</h2>
+    <div class="card-grid">
+      <div class="card-sm"><h4>ORM</h4><p>Object-Relational Mapper — Python classes se DB use karo,
+        raw SQL nahi (SQLAlchemy).</p></div>
+      <div class="card-sm"><h4>Migration</h4><p>DB schema ka "git" — changes versioned files mein (Alembic).</p></div>
+      <div class="card-sm"><h4>JWT</h4><p>JSON Web Token — signed token jisme user identity, stateless verify.</p></div>
+      <div class="card-sm"><h4>RBAC</h4><p>Role-Based Access Control — role se permissions (Admin/Manager/Employee).</p></div>
+      <div class="card-sm"><h4>Embedding</h4><p>Text → numbers ki list jo meaning capture karti hai; similar
+        text paas hota vector space mein.</p></div>
+      <div class="card-sm"><h4>RAG</h4><p>Retrieval-Augmented Generation — relevant context retrieve karke
+        LLM ko do, grounded answer.</p></div>
+      <div class="card-sm"><h4>Diarization</h4><p>"Kaun bola" — audio ko speakers ke hisaab se baantna.</p></div>
+      <div class="card-sm"><h4>Idempotent</h4><p>Same operation dobara = same result, duplicate nahi.</p></div>
+      <div class="card-sm"><h4>Presigned URL</h4><p>Time-limited signed link — browser directly storage se
+        download kare, API bandwidth bache.</p></div>
+      <div class="card-sm"><h4>CORS</h4><p>Browser rule — ek origin dusre ko request tab kare jab backend
+        allow kare.</p></div>
+      <div class="card-sm"><h4>Soft delete</h4><p>Row delete nahi, flag karo (recovery + audit).</p></div>
+      <div class="card-sm"><h4>Graceful degradation</h4><p>Optional feature fail ho to core kaam chalta rahe.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    AI Meeting Intelligence Platform · 12 Modules · FastAPI + Next.js + Docker · 183 tests<br>
+    Built module-by-module with production-grade practices. Ise revise karo, aur interview crack karo! 🚀
+  </footer>
+
+</div>
