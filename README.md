@@ -1,9 +1,54 @@
-# AI Meeting Intelligence Platform
+# 🎙️ AI Meeting Intelligence Platform
 
-AI-powered meeting assistant: upload meeting audio/video → automatic
-transcription (Whisper) → speaker diarization (Pyannote) → LLM-generated
-summaries, decisions & action items → semantic search and RAG chat over all
-your meetings.
+> Upload a meeting recording → get an automatic transcript, speaker labels,
+> an AI summary with decisions & action items, and **chat with your meetings**
+> using RAG. A full-stack, production-grade AI SaaS.
+
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Celery](https://img.shields.io/badge/Celery-37814A?logo=celery&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-183%20passing-brightgreen)
+
+## ✨ Features
+
+- **🎙️ Transcription** — speech → text with timestamps (OpenAI Whisper)
+- **🗣️ Speaker diarization** — "who spoke when" (Pyannote), rename speakers
+- **🧠 Meeting intelligence** — LLM-generated summary, decisions, risks, action items
+- **🔍 Semantic search** — find moments across all meetings by meaning, not keywords
+- **💬 RAG chat** — ask questions about your meetings, answers cite the exact moment
+- **🔐 Auth & multi-tenancy** — JWT + refresh rotation, RBAC, per-org data isolation
+- **📊 Dashboard** — stats, live processing status, dark mode
+
+## 🏆 Engineering Highlights
+
+What makes this more than a tutorial project:
+
+- **Clean Architecture** — `api → services → repositories → models`; business logic
+  is transport- and DB-agnostic and unit-tested without HTTP or a database.
+- **Provider Pattern everywhere** — transcription, LLM, embeddings, vector store and
+  file storage are all swappable via env vars (local ↔ OpenAI ↔ Ollama ↔ stub) with
+  **zero code changes**. Stub providers let the whole AI pipeline run in CI for free.
+- **Async pipeline** — long AI jobs run in Celery workers (not HTTP requests), with a
+  status **state machine**, idempotent reprocessing, and `acks_late` reliability.
+- **Security by design** — bcrypt, JWT refresh-token **rotation with reuse detection**,
+  anti-enumeration, magic-byte file validation, fail-fast production secrets guard.
+- **183 backend unit tests** + integration tests, ruff-linted, CI on GitHub Actions.
+- **Fully dockerized** — one command spins up 6 services; separate dev & prod compose.
+
+> 📄 **[Full build report & interview prep](docs/PROJECT_REPORT.html)** — a detailed
+> walkthrough of all 12 build modules, the real bugs hit & fixed, and 30+ interview Q&A.
+> (Open the HTML file in a browser.)
+
+## 📸 Screenshots
+
+<!-- Add screenshots here: dashboard, meeting detail (transcript/intelligence tabs), chat.
+     Take them from the running app and drop the images in docs/screenshots/, then:
+     ![Dashboard](docs/screenshots/dashboard.png) -->
+_Run locally (below) to see the dashboard, transcript viewer, and RAG chat in action._
 
 ## Architecture (bird's-eye view)
 
@@ -73,7 +118,7 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the full production guide.
 | Health (ready) | http://localhost:8000/api/v1/health/ready |
 | MinIO console  | http://localhost:9001                |
 | ChromaDB       | http://localhost:8001                |
-| Frontend       | http://localhost:3000 *(Module 9+)*  |
+| Frontend       | http://localhost:3000                |
 
 ## Development
 
