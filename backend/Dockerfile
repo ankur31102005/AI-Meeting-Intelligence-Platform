@@ -24,9 +24,10 @@ RUN apt-get update \
 WORKDIR /app
 
 # Dependencies first, code second — Docker layer caching means editing
-# app code does NOT re-run pip install on every build.
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# app code does NOT re-run pip install on every build. The image needs BOTH
+# the core deps and the heavy AI stack.
+COPY requirements.txt requirements-ai.txt ./
+RUN pip install -r requirements.txt -r requirements-ai.txt
 
 COPY . .
 

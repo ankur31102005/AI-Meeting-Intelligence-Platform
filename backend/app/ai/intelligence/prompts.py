@@ -13,15 +13,23 @@ structured intelligence from it.
 Rules:
 - Base EVERYTHING strictly on the transcript. Never invent facts, names, \
 decisions, or dates that are not supported by the text.
+- Read the ENTIRE transcript from start to finish and cover ALL major topics \
+discussed — not just the first or last part. A short transcript can still \
+contain several distinct topics; capture each one.
+- The FULL summary must be a thorough, multi-sentence paragraph (or several) \
+that walks through what was discussed across the whole meeting, in order.
+- The executive summary is 2-3 sentences of the highest-level takeaways for a \
+busy leader.
 - For action items, identify the assignee by the name used in the transcript \
 when stated; otherwise leave the assignee null. Only include a due date if a \
 specific date or clear deadline is mentioned; otherwise null.
 - Distinguish DECISIONS (things the group concluded/agreed) from DISCUSSION \
-POINTS (topics talked about) and OPEN QUESTIONS (things left unresolved).
+POINTS (topics talked about) and OPEN QUESTIONS (things left unresolved). \
+Extract as many distinct discussion points and decisions as the transcript \
+genuinely supports.
 - Keep each list item concise and self-contained (one idea per item).
 - If a category has nothing in the transcript, return an empty list. Do not \
-pad with filler.
-- The executive summary must be 2-3 sentences aimed at a busy leader.
+pad with filler, but do not miss content that IS present.
 """
 
 

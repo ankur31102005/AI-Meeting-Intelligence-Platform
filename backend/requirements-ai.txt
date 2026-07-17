@@ -1,0 +1,35 @@
+# =====================================================================
+# HEAVY AI/ML dependencies — local transcription, diarization, embeddings.
+#
+# Multi-GB (torch + CUDA wheels). Installed in the Docker image alongside
+# requirements.txt. NOT installed in CI: the unit tests use stub providers
+# and every import of these libraries is lazy, so the tests pass without them.
+#
+# Install locally with:  pip install -r requirements-ai.txt
+# =====================================================================
+
+# --- Transcription (faster-whisper / CTranslate2) ---
+faster-whisper>=1.1,<2.0
+
+# --- PyTorch + CUDA runtime (pinned) ---
+# torch 2.5.1 (CUDA 12.1 build) is the version that satisfies EVERYTHING:
+#  1. cu121 runs on a CUDA 12.2 driver (minor-version compat). Bleeding-edge
+#     torch installs as cu130 (CUDA 13) which does NOT run on a 12.2 driver.
+#  2. It bundles cuDNN 9, which faster-whisper/CTranslate2 4.8 also needs
+#     (torch 2.2 used cuDNN 8 -> conflicted with CTranslate2).
+#  3. torchaudio 2.5.1 still exposes `torchaudio.AudioMetaData`, which
+#     pyannote 3.x imports (newer torchaudio removed it).
+# torch pulls the matching nvidia-cublas/cudnn wheels itself; the Dockerfile
+# adds their site-packages lib dirs to LD_LIBRARY_PATH so CTranslate2 finds
+# libcublas.so.12 / libcudnn (fixes "libcublas.so.12 not found" on cuda).
+# On a CPU-only host, drop the +cu121 pins and use plain `torch`/`torchaudio`.
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1+cu121
+torchaudio==2.5.1+cu121
+
+# --- Speaker diarization (OPTIONAL — needs HF_TOKEN) ---
+pyannote.audio>=3.3,<4.0
+
+# --- RAG: embeddings + vector store client ---
+sentence-transformers>=3.3,<6.0
+chromadb>=0.5,<2.0

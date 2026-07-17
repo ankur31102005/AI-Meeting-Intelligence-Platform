@@ -1,11 +1,13 @@
 # =====================================================================
-# Backend runtime dependencies — Module 1 (API core + workers).
-# AI/ML dependencies (faster-whisper, pyannote, langchain, chromadb
-# client, sentence-transformers) are added in Modules 5-7 so the base
-# image stays small until they are actually needed.
+# CORE backend dependencies (web API + workers + auth + storage).
 #
-# Versioning policy: compatible ranges here; an exact lock file
-# (pip-compile) is generated in Module 12 for reproducible prod builds.
+# These are LIGHT and always required. The heavy AI/ML stack (torch,
+# faster-whisper, pyannote, sentence-transformers, chromadb) lives in
+# requirements-ai.txt so that:
+#   * CI can run the unit tests fast (they use stub providers + lazy imports,
+#     so they never need the multi-GB AI wheels),
+#   * a deployment that calls hosted AI (OpenAI) can skip the local models.
+# The Docker image installs BOTH files (see backend/Dockerfile).
 # =====================================================================
 
 # --- Web framework ---
@@ -35,33 +37,8 @@ slowapi>=0.1.9,<0.2                  # rate limiting for auth endpoints
 # --- Storage ---
 boto3>=1.35,<2.0                     # S3 / MinIO client (same API for both)
 
-# --- AI: transcription ---
-# faster-whisper is the local (free, offline) speech-to-text engine. It pulls
-# ctranslate2; the actual model is downloaded lazily on first use, not at
-# install. All whisper imports in the codebase are lazy so the app boots
-# (and the stub/openai providers work) even if this is absent.
-faster-whisper>=1.1,<2.0
-openai>=1.60,<2.0                    # OpenAI Whisper API + (later) LLM
-
-# GPU (CUDA) runtime libs for faster-whisper/CTranslate2 4.8 (needs cuDNN 9).
-# Without these the worker with WHISPER_DEVICE=cuda fails: "libcublas.so.12
-# not found". Versions PINNED to CUDA 12.2 to match this host's driver
-# (537.53 -> CUDA 12.2 max); newer cuBLAS would not load on a 12.2 driver.
-# The Dockerfile adds their site-packages dirs to LD_LIBRARY_PATH. Only used
-# on NVIDIA GPU hosts; harmless on CPU-only setups.
-nvidia-cublas-cu12==12.2.5.6
-nvidia-cudnn-cu12==9.1.0.70
-
-# --- AI: speaker diarization (OPTIONAL) ---
-# pyannote.audio pulls torch; only used when HF_TOKEN is configured. Imported
-# lazily so the platform runs fully without it (diarization just skips).
-pyannote.audio>=3.3,<4.0
-
-# --- AI: RAG (embeddings + vector store) ---
-# sentence-transformers reuses the torch already pulled above. chromadb here
-# is the CLIENT (talks to the chromadb service). Both imported lazily.
-sentence-transformers>=3.3,<6.0
-chromadb>=0.5,<2.0
+# --- LLM / API client (light — no local model) ---
+openai>=1.60,<2.0                    # OpenAI Whisper API + LLM + used by the Ollama provider
 
 # --- Observability ---
 structlog>=24.4,<26.0
