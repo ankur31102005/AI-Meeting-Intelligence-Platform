@@ -45,10 +45,17 @@ What makes this more than a tutorial project:
 
 ## 📸 Screenshots
 
-<!-- Add screenshots here: dashboard, meeting detail (transcript/intelligence tabs), chat.
-     Take them from the running app and drop the images in docs/screenshots/, then:
-     ![Dashboard](docs/screenshots/dashboard.png) -->
-_Run locally (below) to see the dashboard, transcript viewer, and RAG chat in action._
+**Dashboard** — meeting stats & recent activity
+![Dashboard](docs/screenshots/dashboard.png)
+
+**Meeting Intelligence** — LLM-generated executive & full summary
+![Intelligence](docs/screenshots/intelligence.png)
+
+**Transcript** — timestamped, speaker-attributed
+![Transcript](docs/screenshots/transcript.png)
+
+**RAG Chat** — ask questions across meetings; answers cite the exact moment (here summarizing in Hinglish)
+![Chat](docs/screenshots/chat.png)
 
 ## Architecture (bird's-eye view)
 
