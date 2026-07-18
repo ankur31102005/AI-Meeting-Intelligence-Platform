@@ -87,6 +87,8 @@ export const chatApi = {
     api.request<ChatSession>("/chat/sessions", { method: "POST", body: { meeting_id, title } }),
   listSessions: () => api.request<ChatSession[]>("/chat/sessions"),
   getSession: (id: string) => api.request<ChatSessionDetail>(`/chat/sessions/${id}`),
+  deleteSession: (id: string) =>
+    api.request<{ message: string }>(`/chat/sessions/${id}`, { method: "DELETE" }),
   ask: (sessionId: string, question: string) =>
     api.request<ChatMessage>(`/chat/sessions/${sessionId}/messages`, {
       method: "POST",

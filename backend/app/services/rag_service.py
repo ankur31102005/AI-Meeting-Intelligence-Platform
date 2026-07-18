@@ -108,6 +108,18 @@ class RAGService:
             raise NotFoundError("Chat session not found")
         return session, self.messages.list_for_session(session_id)
 
+    def delete_session(self, *, session_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        """Delete a chat session (and its messages) owned by the user.
+
+        Deleting the ChatSession cascades to its ChatMessages — the
+        session_id FK is ON DELETE CASCADE and the relationship is
+        delete-orphan, so no message rows are left behind."""
+        session = self.sessions.get_for_user(session_id, user_id)
+        if session is None:
+            raise NotFoundError("Chat session not found")
+        self.db.delete(session)
+        self.db.commit()
+
     # ------------------------------------------------------------------
     # Ask (the RAG loop)
     # ------------------------------------------------------------------

@@ -115,6 +115,14 @@ def get_session(
     )
 
 
+@router.delete("/chat/sessions/{session_id}", summary="Delete a chat session")
+def delete_session(
+    session_id: uuid.UUID, svc: RagSvc, user: CurrentUser
+) -> APIResponse[dict]:
+    svc.delete_session(session_id=session_id, user_id=user.id)
+    return APIResponse(data={"message": "Conversation deleted"})
+
+
 @router.post(
     "/chat/sessions/{session_id}/messages",
     summary="Ask a question (RAG answer with citations)",

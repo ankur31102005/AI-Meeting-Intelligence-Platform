@@ -212,3 +212,52 @@ class TestChat:
             json={"meeting_id": "00000000-0000-0000-0000-000000000000"},
         )
         assert resp.status_code == 404
+
+
+class TestDeleteSession:
+    def test_delete_removes_session_and_messages(self, client, store):
+        headers = auth_headers(client)
+        org_id = me(client, headers)["organization_id"]
+        seed_chunks(store, org_id=org_id, meeting_id=uuid.uuid4(), texts=["Some content"])
+        session_id = client.post(
+            "/api/v1/chat/sessions", headers=headers, json={}
+        ).json()["data"]["id"]
+        client.post(
+            f"/api/v1/chat/sessions/{session_id}/messages",
+            headers=headers,
+            json={"question": "What happened?"},
+        )
+        # Delete the conversation.
+        resp = client.delete(f"/api/v1/chat/sessions/{session_id}", headers=headers)
+        assert resp.status_code == 200
+        # It's gone (session + its messages).
+        assert client.get(
+            f"/api/v1/chat/sessions/{session_id}", headers=headers
+        ).status_code == 404
+        assert client.get("/api/v1/chat/sessions", headers=headers).json()["data"] == []
+
+    def test_delete_unknown_session_404(self, client):
+        headers = auth_headers(client)
+        resp = client.delete(
+            "/api/v1/chat/sessions/00000000-0000-0000-0000-000000000000",
+            headers=headers,
+        )
+        assert resp.status_code == 404
+
+    def test_cannot_delete_other_users_session(self, client):
+        owner = auth_headers(client)
+        session_id = client.post(
+            "/api/v1/chat/sessions", headers=owner, json={}
+        ).json()["data"]["id"]
+        intruder = auth_headers(
+            client, email="intruder@evil.com", organization_name="Evil"
+        )
+        # Intruder can't delete it (tenant/user isolation).
+        assert (
+            client.delete(f"/api/v1/chat/sessions/{session_id}", headers=intruder).status_code
+            == 404
+        )
+        # And it still exists for the owner.
+        assert (
+            client.get(f"/api/v1/chat/sessions/{session_id}", headers=owner).status_code == 200
+        )

@@ -1,12 +1,13 @@
 "use client";
 
-import { Loader2, MessageSquarePlus, Send } from "lucide-react";
+import { Loader2, MessageSquarePlus, Send, Trash2 } from "lucide-react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Citations } from "@/components/chat/citations";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { chatApi } from "@/lib/endpoints";
@@ -20,6 +21,7 @@ function ChatInner() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [pendingDelete, setPendingDelete] = useState<ChatSession | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Load session list once.
@@ -52,6 +54,26 @@ function ChatInner() {
       setMessages([]);
     } catch {
       toast.error("Could not start a chat");
+    }
+  }
+
+  async function confirmDelete() {
+    const target = pendingDelete;
+    if (!target) return;
+    setPendingDelete(null);
+    // Compute the next selection BEFORE removing (ChatGPT-style: pick another).
+    const remaining = sessions.filter((s) => s.id !== target.id);
+    try {
+      await chatApi.deleteSession(target.id);
+      setSessions(remaining);
+      if (activeId === target.id) {
+        // Select another conversation, or clear to the empty state.
+        setActiveId(remaining[0]?.id ?? null);
+        setMessages([]);
+      }
+      toast.success("Conversation deleted");
+    } catch {
+      toast.error("Could not delete the conversation");
     }
   }
 
@@ -113,16 +135,33 @@ function ChatInner() {
             <p className="px-2 py-4 text-xs text-muted-foreground">No chats yet.</p>
           ) : (
             sessions.map((s) => (
-              <button
+              <div
                 key={s.id}
-                onClick={() => setActiveId(s.id)}
                 className={cn(
-                  "w-full truncate rounded-md px-3 py-2 text-left text-sm transition-colors",
+                  "group flex items-center rounded-md pr-1 text-sm transition-colors",
                   activeId === s.id ? "bg-primary/10 text-primary" : "hover:bg-accent"
                 )}
               >
-                {s.title}
-              </button>
+                <button
+                  onClick={() => setActiveId(s.id)}
+                  className="min-w-0 flex-1 truncate px-3 py-2 text-left"
+                >
+                  {s.title}
+                </button>
+                {/* Delete: appears on hover (or when this chat is active). */}
+                <button
+                  onClick={() => setPendingDelete(s)}
+                  aria-label="Delete conversation"
+                  className={cn(
+                    "shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity",
+                    "hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100",
+                    "focus-visible:opacity-100",
+                    activeId === s.id && "opacity-100"
+                  )}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             ))
           )}
         </div>
@@ -133,11 +172,17 @@ function ChatInner() {
         <div className="flex-1 space-y-4 overflow-y-auto p-6">
           {messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
-              <p className="text-lg font-medium text-foreground">Ask about your meetings</p>
-              <p className="mt-1 max-w-sm text-sm">
-                e.g. &quot;What did we decide about the release?&quot; or &quot;Who owns the
-                backend?&quot; Answers cite the exact meeting and moment.
-              </p>
+              {sessions.length === 0 && !activeId ? (
+                <p className="text-lg font-medium text-foreground">Start a new conversation.</p>
+              ) : (
+                <>
+                  <p className="text-lg font-medium text-foreground">Ask about your meetings</p>
+                  <p className="mt-1 max-w-sm text-sm">
+                    e.g. &quot;What did we decide about the release?&quot; or &quot;Who owns the
+                    backend?&quot; Answers cite the exact meeting and moment.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             messages.map((m) => (
@@ -181,6 +226,16 @@ function ChatInner() {
           </Button>
         </form>
       </Card>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Delete Conversation?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

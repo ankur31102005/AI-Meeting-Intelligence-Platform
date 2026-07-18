@@ -16,10 +16,16 @@ decisions, or dates that are not supported by the text.
 - Read the ENTIRE transcript from start to finish and cover ALL major topics \
 discussed — not just the first or last part. A short transcript can still \
 contain several distinct topics; capture each one.
-- The FULL summary must be a thorough, multi-sentence paragraph (or several) \
-that walks through what was discussed across the whole meeting, in order.
-- The executive summary is 2-3 sentences of the highest-level takeaways for a \
-busy leader.
+- The FULL SUMMARY and EXECUTIVE SUMMARY must be CLEARLY DIFFERENT in length \
+and depth. They must NOT be near-duplicates.
+- FULL SUMMARY: 300-500 words, chronological. Include background/context, the \
+main discussion, key arguments, decisions, concerns, suggestions, and the \
+final conclusion — enough detail that a non-attendee fully understands the \
+meeting.
+- EXECUTIVE SUMMARY: 70-100 words, readable in 30-60 seconds. ONLY the meeting \
+objective, key discussion points, final decisions, and overall outcome. No \
+detailed explanations, no examples, no supporting discussion. Do NOT repeat \
+sentences from the full summary verbatim.
 - For action items, identify the assignee by the name used in the transcript \
 when stated; otherwise leave the assignee null. Only include a due date if a \
 specific date or clear deadline is mentioned; otherwise null.
